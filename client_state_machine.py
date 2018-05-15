@@ -7,8 +7,15 @@ import json
 import datetime
 import math
 import random
-import seem_to_work
+import game24
 
+try:
+    import pyautogui
+except:
+    pass
+
+points = 0
+rounds_won = 0
 
 class ClientSM:
     def __init__(self, s):
@@ -17,6 +24,8 @@ class ClientSM:
         self.me = ''
         self.out_msg = ''
         self.s = s
+        self.old_state = ''
+        self.seed = 1
 
     def set_state(self, state):
         self.state = state
@@ -53,9 +62,12 @@ class ClientSM:
         self.peer = ''
 
     def game(self):
-        seed = random.randint(1,10000)
-        seem_to_work.Twentyfour(60, seed)
-
+        self.seed = random.randint(1,1000)
+        game = game24.Twentyfour(60, self.seed)
+        global points
+        global rounds_won
+        points, rounds_won = game.start_game()
+        
     def proc(self, my_msg, peer_msg):
         self.out_msg = ''
 #==============================================================================
@@ -110,9 +122,12 @@ class ClientSM:
                     else:
                         self.out_msg += 'Sonnet ' + poem_idx + ' not found\n\n'
                         
+                #You play by yourself
                 elif my_msg == 'play 24':
-                    self.game()
-                                          
+                    self.out_msg += 'Now you are play the 24 point game~!'  
+                    self.old_state = self.state
+                    self.state = S_GAME   
+                    
                 else:
                     self.out_msg += menu
 
@@ -125,7 +140,7 @@ class ClientSM:
                     self.out_msg += '. Chat away!\n\n'
                     self.out_msg += '------------------------------------\n'
                     self.state = S_CHATTING
-
+       
 #==============================================================================
 # Start chatting, 'bye' for quit
 # This is event handling instate "S_CHATTING"
@@ -137,10 +152,12 @@ class ClientSM:
                     self.disconnect()
                     self.state = S_LOGGEDIN
                     self.peer = ''
-                    
+                
+                #You start playing and so does your peer
                 if 'play 24' in my_msg:
-                    #self.out_msg += 'Now you are playing 24 game with {}'.format(self.peer)
-                    self.game()
+                    self.out_msg += 'Now you are playing 24 game with {}'.format(self.peer)
+                    self.old_state = self.state
+                    self.state = S_GAME
                     
             if len(peer_msg) > 0:    # peer's stuff, coming in
                 peer_msg = json.loads(peer_msg)
@@ -148,15 +165,36 @@ class ClientSM:
                     self.out_msg += "(" + peer_msg["from"] + " joined)\n"
                 elif peer_msg["action"] == "disconnect":
                     self.state = S_LOGGEDIN
+                #Your peer starts playing and so do you
                 elif 'play 24' in peer_msg['message']:
-                    #self.out_msg += 'Now you are playing 24 game with {}'.format(peer_msg['from'])
-                    self.game()
+                    self.out_msg += 'Now you are playing 24 game with {}'.format(self.peer)
+                    self.old_state = self.state
+                    self.state = S_GAME
                 else:
                     self.out_msg += peer_msg["from"] + peer_msg["message"]
   
             # Display the menu again
             if self.state == S_LOGGEDIN:
                 self.out_msg += menu
+                
+        #24 Points gaming state
+        elif self.state == S_GAME:
+            self.game()
+            self.state = self.old_state
+            if self.state == S_CHATTING:
+                try:
+                    global points
+                    pyautogui.typewrite("I got " + str(points) + " points!")
+                    pyautogui.hotkey("enter")
+                    if rounds_won == 1:
+                        pyautogui.typewrite("And I won " + str(rounds_won) + " round!")
+                    else:
+                        pyautogui.typewrite("And I won " + str(rounds_won) + " rounds!")
+                    pyautogui.hotkey("enter")
+                except:
+                    print("For best experience, you may install pyautogui from https://pyautogui.readthedocs.io/en/latest/install.html")
+            
+            
 #==============================================================================
 # invalid state
 #==============================================================================
@@ -165,3 +203,4 @@ class ClientSM:
             print_state(self.state)
 
         return self.out_msg
+    
