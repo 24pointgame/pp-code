@@ -6,6 +6,7 @@ Using a chat system already implemented, we injected a 24 Points game (https://e
 The main game is in 24_game.py, and the main injection occurs inside client_state_machine.py
 To run the chat system, in terminal, first you must open the server (chat_server.cpython-36.pyc for python 3.6 for example), then you must in other terminal windows open chat clients (chat_cmdl_client.py).
 ——————
+
 Game details:
 24 Points, or 24点 is a game where players try to get the number 24 by forming an expression from four cards or numbers, using the operators "+", "-", "*", "/". (e.g. given [2], [5], [7], [9]. One solution would be 5*7-2-9=24)
 In our game, you can also use python’s built-in operators: ** (exponent) // (integer division) and % (modulus), and we even made factorial work if you did !(A) or !(A+b) etc..
